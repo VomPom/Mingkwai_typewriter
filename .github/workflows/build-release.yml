@@ -41,17 +41,17 @@ jobs:
         name: Rename File
         run: |
           $ErrorActionPreference = "Stop"
-          mv D:\a\Mingkwai_typewriter\Mingkwai_typewriter\build\compose\binaries\main-release\msi\Mingkwai-${{ inputs.tag_version }}.msi D:\a\Mingkwai_typewriter\Mingkwai_typewriter\build\compose\binaries\main-release\msi\Mingkwai-${{ inputs.tag_version }}-windows-x64.msi
+          mv D:\a\Mingkwai_typewriter\Mingkwai_typewriter\composeApp\build\compose\binaries\main-release\msi\mingkwai-${{ inputs.tag_version }}.msi D:\a\Mingkwai_typewriter\Mingkwai_typewriter\composeApp\build\compose\binaries\main-release\msi\mingkwai-${{ inputs.tag_version }}-windows-x64.msi
 
       - if: matrix.os == 'macos-13'
         name: Rename File
         run: |
-          mv /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/build/compose/binaries/main-release/dmg/Mingkwai-${{ inputs.tag_version }}.dmg  /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/build/compose/binaries/main-release/dmg/Mingkwai-${{ inputs.tag_version }}-macos-x64.dmg
+          mv /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/composeApp/build/compose/binaries/main-release/dmg/mingkwai-${{ inputs.tag_version }}.dmg  /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/composeApp/build/compose/binaries/main-release/dmg/mingkwai-${{ inputs.tag_version }}-macos-x64.dmg
 
       - if: matrix.os == 'macos-14'
         name: Rename File
         run: |
-          mv /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/build/compose/binaries/main-release/dmg/Mingkwai-${{ inputs.tag_version }}.dmg /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/build/compose/binaries/main-release/dmg/Mingkwai-${{ inputs.tag_version }}-macos-arm64.dmg
+          mv /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/composeApp/build/compose/binaries/main-release/dmg/mingkwai-${{ inputs.tag_version }}.dmg /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/composeApp/build/compose/binaries/main-release/dmg/mingkwai-${{ inputs.tag_version }}-macos-arm64.dmg
 
       - name: Draft Release
         uses: ncipollo/release-action@v1

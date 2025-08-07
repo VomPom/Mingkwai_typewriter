@@ -12,6 +12,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UserData(
     val audio: Boolean,
+    val showStats: Boolean,
     val fontSize: Int,
-    val editText: String
+    val fontName: String,
+    val editText: String,
+    val textAlign: String
 )

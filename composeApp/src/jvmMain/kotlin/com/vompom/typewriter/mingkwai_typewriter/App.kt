@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,6 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
@@ -44,10 +47,10 @@ import androidx.compose.ui.unit.sp
 import com.vompom.typewriter.mingkwai_typewriter.data.MainViewModel
 import com.vompom.typewriter.mingkwai_typewriter.data.MainViewModel.AudioType
 import com.vompom.typewriter.mingkwai_typewriter.data.SnapshotState
-import com.vompom.typewriter.mingkwai_typewriter.ext.dashedBorder
 import com.vompom.typewriter.mingkwai_typewriter.ext.pxToDp
 import com.vompom.typewriter.mingkwai_typewriter.ext.snapshot
 import com.vompom.typewriter.mingkwai_typewriter.utils.snapshotDir
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.jetbrains.skia.PictureRecorder
 
@@ -68,12 +71,13 @@ fun App(viewModel: MainViewModel) {
     }
 }
 
-
 @Composable
 fun Typewriter(viewModel: MainViewModel) {
     val mainBackground = Color(239, 229, 219)
     val bottomHeight = 160
     var maxWidth by remember { mutableStateOf(0) }
+    var editText by remember { mutableStateOf("") }
+    var typedChar by remember { mutableStateOf(' ') }
     val lazyListState = rememberLazyListState()
     val pictureRecorder = PictureRecorder()
     Box(
@@ -105,19 +109,19 @@ fun Typewriter(viewModel: MainViewModel) {
                             onSuccess = {
                                 viewModel.makeSnapshot(SnapshotState.Done(it))
                             }
-                        ), viewModel, lazyListState, maxWidth, bottomHeight)
+                        ), viewModel, lazyListState, maxWidth, bottomHeight,
+                        onTextChange = { text ->
+                            viewModel.updateText(text)
+                            editText = text
+                        },
+                        onKeyType = { char ->
+                            typedChar = char
+                        })
                     Spacer(modifier = Modifier.height(50.dp))
                 }
             }
         }
-        Spacer(
-            modifier = Modifier
-                .width(1.dp)
-                .dashedBorder(0.dp, 0.dp, Color.Black)
-                .fillMaxHeight()
-                .align(Alignment.Center)
-        )
-        Bottom(bottomHeight) {
+        Bottom(bottomHeight, viewModel.showStatusUI(), editText, typedChar) {
             viewModel.makeSnapshot(SnapshotState.TODO)
         }
     }
@@ -130,36 +134,26 @@ fun BoxScope.TypeArea(
     viewModel: MainViewModel,
     scrollableState: LazyListState,
     maxWidth: Int,
-    bottomHeight: Int
+    bottomHeight: Int,
+    onTextChange: (String) -> Unit,
+    onKeyType: (Char) -> Unit
 ) {
-    val text = buildString {
-        appendLine("0")
-        appendLine("1测")
-        appendLine("2测试")
-        appendLine("3测试文")
-//        appendLine("4测试文本")
-//        appendLine("5测试文本数")
-//        appendLine("6测试文本数据")
-//        appendLine("7测试文本数据测")
-//        appendLine("8测试文本数据测试")
-//        appendLine("9测试文本数据测试文")
-//        appendLine("10测试文本数据测试文本")
-//        appendLine("11测试文本数据测试文本测")
-//        appendLine("12测试文本测试文本测试文本")
-//        appendLine("13测试文本测试文本测试文本测")
-//        appendLine("14测试文本数据测试文本测试文本")
-//        appendLine("15测试文本数据测试文本数据测")
-//        appendLine("16测试文本数据测试文本测试")
-    }
+    val paperRate = 0.65     // 纸张的比例
+    val textPadding = 40    // 文字边缘 padding
     val userData by viewModel.userData.collectAsState()
     val fontSize = userData.fontSize
-    val paperRate = 0.53
-    val textPadding = 40
-    var lineCount by remember { mutableStateOf(0) }
+    var lineCount by remember { mutableStateOf(1) }
     var lastLineWH by remember { mutableStateOf(Pair<Float, Float>(0f, 0f)) }       // 上一次编辑时候的行宽高
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-    var typeTextValue by remember { mutableStateOf(TextFieldValue(text)) }
 
+    var typeTextValue by remember { mutableStateOf(TextFieldValue("")) }
+    val focusRequester = remember { FocusRequester() }
+
+    // 自动请求焦点
+    LaunchedEffect(Unit) {
+        delay(100)
+        focusRequester.requestFocus()
+    }
     //  selection[start,end] 光标所在的选择开始的位置, e.g [0,7]->从第1个字符选择到第8个字符 [7,0]->从第8个字符选择到第1个字符
     val cursorPosition = typeTextValue.selection.end
 
@@ -196,7 +190,6 @@ fun BoxScope.TypeArea(
     )
     LaunchedEffect(typeTextValue) {
         scrollableState.animateScrollToItem(0, scrollOffset = Int.MAX_VALUE)
-        println()
     }
     Box(
         modifier = Modifier
@@ -214,7 +207,8 @@ fun BoxScope.TypeArea(
                     // 光标移动也会触发 onValueChange，这里标记文字的差异
                     if (typeTextValue.text != it.text) {
                         viewModel.playAudio(AudioType.CLICK)
-                        viewModel.updateText(it.text)
+                        onTextChange(it.text)
+                        onKeyType(it.text.lastOrNull() ?: ' ')
                     }
                     // 保持光标始终在最后的位置（也就是无法点击文本进行光标位置移动）
                     typeTextValue = it.copy(
@@ -224,41 +218,74 @@ fun BoxScope.TypeArea(
                 modifier = Modifier
                     .height((lineCount * lineHeight).pxToDp() + bottomHeight.dp)
                     .background(Color.White)
-                    .padding(textPadding.dp),
+                    .padding(textPadding.dp)
+                    .focusRequester(focusRequester),
                 textStyle = TextStyle.Default.copy(
                     fontSize = fontSize.sp,
-                    fontFamily = viewModel.typeFontFamily()
+                    fontFamily = viewModel.typeFontFamily(),
+                    textAlign = viewModel.textAlign()
                 ),
                 onTextLayout = { layoutResult ->
                     textLayoutResult = layoutResult
                     val newLineCount = layoutResult.lineCount
                     if (newLineCount != lineCount) {
-                        println("文本换行了，当前行1数: $newLineCount")
                         lineCount = newLineCount
 
                         viewModel.playAudio(AudioType.NEWLINE)
                     }
+                    layoutResult.multiParagraph.intrinsics.placeholders
                 },
-                cursorBrush = SolidColor(Color.Red)
+                cursorBrush = SolidColor(Color.Transparent)
             )
         }
     }
 }
 
 @Composable
-fun BoxScope.Bottom(bottomHeight: Int, onSnapshot: () -> Unit) {
-    Box(
+fun BoxScope.Bottom(bottomHeight: Int, showStats: Boolean, editText: String, typedChar: Char, onSnapshot: () -> Unit) {
+    Column(
         modifier = Modifier
             .align(Alignment.BottomCenter)
-            .fillMaxWidth()
-            .height(bottomHeight.dp)
-            .background(Color(100, 0, 100, 120))
     ) {
-        Row(modifier = Modifier.align(Alignment.BottomEnd)) {
-            Button(onClick = {
-                onSnapshot()
-            }) {
-                Text("截图")
+        Spacer(
+            modifier = Modifier
+                .width(1.dp)
+                .background(Color(0, 0, 0, 100))
+                .height(30.dp)
+                .align(Alignment.CenterHorizontally)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 100.dp)
+                .clip(RoundedCornerShape(topEnd = 10.dp, topStart = 10.dp))
+                .height(bottomHeight.dp)
+                .background(Color(216, 176, 162, 200))
+        ) {
+            if (showStats) {
+                Row(
+                    modifier = Modifier
+                        .height(55.dp)
+                        .padding(10.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .align(Alignment.BottomEnd)
+                        .background(Color(251, 247, 245))
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .align(Alignment.CenterVertically),
+                        text = "Typed: ${if (typedChar == '\n') "\\n" else typedChar.uppercaseChar()}",
+                        style = TextStyle(fontSize = 12.sp)
+                    )
+                    Text(
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .align(Alignment.CenterVertically),
+                        text = "Characters:${editText.length}",
+                        style = TextStyle(fontSize = 12.sp)
+                    )
+                }
             }
         }
     }

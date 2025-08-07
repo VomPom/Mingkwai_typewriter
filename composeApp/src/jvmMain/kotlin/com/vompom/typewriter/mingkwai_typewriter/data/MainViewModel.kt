@@ -6,6 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.russhwolf.settings.ExperimentalSettingsApi
@@ -13,6 +14,7 @@ import com.russhwolf.settings.coroutines.FlowSettings
 import com.vompom.typewriter.mingkwai_typewriter.componet.AudioManager
 import com.vompom.typewriter.mingkwai_typewriter.ext.update
 import com.vompom.typewriter.mingkwai_typewriter.utils.browseFileDirectory
+import com.vompom.typewriter.mingkwai_typewriter.utils.formatTimestamp
 import com.vompom.typewriter.mingkwai_typewriter.utils.textDir
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -21,7 +23,7 @@ import java.io.File
 
 /**
  *
- * Created by @juliswang on 2025/07/31 16:03
+ * Created by @juliswang on 2025/07/31 21:03
  *
  * @Description
  */
@@ -50,8 +52,19 @@ class MainViewModel @OptIn(ExperimentalSettingsApi::class) constructor(
     }
 
     fun updateAudio(audioEnable: Boolean) = updateUserData { copy(audio = audioEnable) }
+    fun updateShowStats(showStats: Boolean) = updateUserData { copy(showStats = showStats) }
+    fun updateTextAlign(textAlign: TextAlign) = updateUserData { copy(textAlign = textAlign.toString()) }
 
-    fun updateFont(newFont: Int) = updateUserData { copy(fontSize = newFont) }
+    fun updateFont(fontSize: Int = -1, fontName: String = "") {
+        updateUserData {
+            copy(
+                fontSize = if (fontSize == -1) userData.value.fontSize else fontSize,
+                fontName = if (fontName == "") userData.value.fontName else fontName
+            )
+        }
+    }
+
+
     fun updateText(text: String) = _editText.update { text }
 
     fun playAudio(type: AudioType) = if (userData.value.audio) {
@@ -71,11 +84,25 @@ class MainViewModel @OptIn(ExperimentalSettingsApi::class) constructor(
         viewModelScope.launch {
             try {
                 val fileDir = textDir
-                val fileName = "user_note_${System.currentTimeMillis()}.txt"
+                val fileName = "mk_${formatTimestamp(System.currentTimeMillis())}.txt"
                 val file = File(fileDir, fileName)
                 file.writeText(_editText.value)
+                browseFileDirectory(file)
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    fun showStatusUI(): Boolean = this.userData.value.showStats
+
+    fun textAlign(): TextAlign {
+        return when (this.userData.value.textAlign) {
+            TextAlign.Left.toString() -> TextAlign.Left
+            TextAlign.Center.toString() -> TextAlign.Center
+            TextAlign.Right.toString() -> TextAlign.Right
+            else -> {
+                TextAlign.Left
             }
         }
     }
@@ -83,7 +110,7 @@ class MainViewModel @OptIn(ExperimentalSettingsApi::class) constructor(
     fun typeFontFamily(): FontFamily {
         return FontFamily(
             Font(
-                "font/汇文明朝体.otf",
+                "font/${this.userData.value.fontName}",
                 FontWeight.Normal,
                 FontStyle.Normal
             )
@@ -91,8 +118,8 @@ class MainViewModel @OptIn(ExperimentalSettingsApi::class) constructor(
     }
 
     enum class AudioType(val fileName: String) {
-        CLICK("key_1.wav"),
-        NEWLINE("typewriter_return.wav")
+        CLICK("key_1"),
+        NEWLINE("typewriter_return")
     }
 }
 

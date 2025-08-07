@@ -1,7 +1,9 @@
 package com.vompom.typewriter.mingkwai_typewriter.data
 
+import androidx.compose.ui.text.style.TextAlign
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.coroutines.FlowSettings
+import com.vompom.typewriter.mingkwai_typewriter.componet.FONT_NAME_LIST
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -19,7 +21,10 @@ class PreferencesDataSource @OptIn(ExperimentalSettingsApi::class) constructor(p
         val DEFAULT_USER_DATA = UserData(
             audio = true,
             fontSize = 25,
-            editText = ""
+            fontName = FONT_NAME_LIST.first(),
+            showStats = false,
+            editText = "",
+            textAlign = TextAlign.Left.toString(),
         )
     }
 

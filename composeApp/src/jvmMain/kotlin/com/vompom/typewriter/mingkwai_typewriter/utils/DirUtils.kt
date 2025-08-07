@@ -1,5 +1,6 @@
 package com.vompom.typewriter.mingkwai_typewriter.utils
 
+import com.vompom.typewriter.mingkwai_typewriter.componet.APP_TITLE
 import java.awt.Desktop
 import java.io.File
 
@@ -9,7 +10,6 @@ import java.io.File
  *
  * @Description
  */
-private const val APP_DIR = "mingkuai"
 
 val snapshotDir: String = safeDir("snapshot")
 val textDir: String = safeDir("text")
@@ -17,7 +17,7 @@ val textDir: String = safeDir("text")
 private fun safeDir(dirname: String): String {
     val path = getDownloadDirectory()
         .plus(File.separator)
-        .plus(APP_DIR)
+        .plus(APP_TITLE)
         .plus(File.separator)
         .plus(dirname)
     if (!File(path).exists()) {
@@ -36,12 +36,6 @@ fun getDownloadDirectory(): String {
         }
     }
 }
-
-val isWindows = System.getProperty("os.name").startsWith("Win")
-
-val isLinux = System.getProperty("os.name").startsWith("Linux")
-
-val isMac = System.getProperty("os.name").startsWith("Mac")
 
 
 fun browseFileDirectory(file: File) {

@@ -44,7 +44,7 @@ compose.desktop {
         mainClass = "com.vompom.typewriter.mingkwai_typewriter.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.vompom.typewriter.mingkwai_typewriter"
+            packageName = "mingkwai"
             packageVersion = "1.0.0"
             nativeDistributions {
                 appResourcesRootDir = rootDir.resolve("myAssets/")

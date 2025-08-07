@@ -1,0 +1,64 @@
+name: Build Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_version:
+        description: 'Specify the version tag (required)'
+        required: true
+jobs:
+  create-release-distribution:
+    strategy:
+      matrix:
+        os: [ windows-latest , macos-13 , macos-14 ]
+    runs-on: ${{ matrix.os }}
+    name: Create Release Distribution
+
+    steps:
+      - if: matrix.os != 'macos-14'
+        name: Setup Jdk
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+          architecture: x64
+
+      - if: matrix.os == 'macos-14'
+        name: Setup Jdk
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+          architecture: aarch64
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: PackageReleaseDistributionForCurrentOS
+        run: ./gradlew packageReleaseDistributionForCurrentOS
+
+      - if: matrix.os == 'windows-latest'
+        name: Rename File
+        run: |
+          $ErrorActionPreference = "Stop"
+          mv D:\a\Mingkwai_typewriter\Mingkwai_typewriter\build\compose\binaries\main-release\msi\Mingkwai-${{ inputs.tag_version }}.msi D:\a\Mingkwai_typewriter\Mingkwai_typewriter\build\compose\binaries\main-release\msi\Mingkwai-${{ inputs.tag_version }}-windows-x64.msi
+
+      - if: matrix.os == 'macos-13'
+        name: Rename File
+        run: |
+          mv /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/build/compose/binaries/main-release/dmg/Mingkwai-${{ inputs.tag_version }}.dmg  /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/build/compose/binaries/main-release/dmg/Mingkwai-${{ inputs.tag_version }}-macos-x64.dmg
+
+      - if: matrix.os == 'macos-14'
+        name: Rename File
+        run: |
+          mv /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/build/compose/binaries/main-release/dmg/Mingkwai-${{ inputs.tag_version }}.dmg /Users/runner/work/Mingkwai_typewriter/Mingkwai_typewriter/build/compose/binaries/main-release/dmg/Mingkwai-${{ inputs.tag_version }}-macos-arm64.dmg
+
+      - name: Draft Release
+        uses: ncipollo/release-action@v1
+        with:
+          draft: true
+          allowUpdates: true
+          generateReleaseNotes: true
+          tag: "v${{ inputs.tag_version }}"
+          artifacts: "build/compose/binaries/main-release/dmg/*,build/compose/binaries/main-release/msi/*"
+          token: ${{ secrets.GH_TOKEN }}

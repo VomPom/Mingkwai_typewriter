@@ -60,5 +60,5 @@ jobs:
           allowUpdates: true
           generateReleaseNotes: true
           tag: "v${{ inputs.tag_version }}"
-          artifacts: "build/compose/binaries/main-release/dmg/*,build/compose/binaries/main-release/msi/*"
+          artifacts: "composeApp/build/compose/binaries/main-release/dmg/*,composeApp/build/compose/binaries/main-release/msi/*"
           token: ${{ secrets.GH_TOKEN }}
